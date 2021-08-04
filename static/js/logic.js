@@ -31,9 +31,10 @@ d3.json(queryUrl).then(function (data) {
         },
 
         onEachFeature: function (feature, layer) {
-            layer.bindPopup(
-                "<h4 style='text-align:center;'>" + new Date(feature.properties.time) +
-                "</h4> <hr> <h5 style='text-align:center;'>" + feature.properties.title + "</h5>");
+            layer.bindPopup(`<h2>Location: ${feature.properties.place}</h2>
+            <hr><h3>Magnitude: ${feature.properties.mag}</h3>
+            <hr><h3>Depth: ${feature.geometry.coordinates[2]}</h3>
+            <hr><p style="text-align:center;">Date: ${new Date(feature.properties.time)}</p>`);
         }
     }).addTo(earthquakes);
     createMap(earthquakes);
@@ -49,7 +50,7 @@ d3.json(platesUrl, function (response) {
                 color: Color(geoJsonFeature)
             }
         },
-    }).addTo(faultline);
+    }).addTo(plates);
 })
 
 function Color(magnitude) {
@@ -72,15 +73,21 @@ function Color(magnitude) {
 function createMap(earthquakes) {
 
     // Create the base layers.
-    let street = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    let grayscale = L.tileLayer("https://api.mapbox.com/styles/v1/mapbox/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}", {
+        attribution: "Map data &copy; <a href=\"https://www.openstreetmap.org/\">OpenStreetMap</a> contributors, <a href=\"https://creativecommons.org/licenses/by-sa/2.0/\">CC-BY-SA</a>, Imagery © <a href=\"https://www.mapbox.com/\">Mapbox</a>",
+        maxZoom: 18,
+        id: "light-v10",
+        accessToken: API_KEY
     });
 
-    let topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-        attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
+    let outdoors = L.tileLayer("https://api.mapbox.com/styles/v1/mapbox/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}", {
+        attribution: "Map data &copy; <a href=\"https://www.openstreetmap.org/\">OpenStreetMap</a> contributors, <a href=\"https://creativecommons.org/licenses/by-sa/2.0/\">CC-BY-SA</a>, Imagery © <a href=\"https://www.mapbox.com/\">Mapbox</a>",
+        maxZoom: 18,
+        id: "outdoors-v11",
+        accessToken: API_KEY
     });
 
-  // Define Variables for Tile Layers
+  
     let satellite = L.tileLayer("https://api.mapbox.com/styles/v1/mapbox/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}", {
         attribution: "Map data &copy; <a href=\"https://www.openstreetmap.org/\">OpenStreetMap</a> contributors, <a href=\"https://creativecommons.org/licenses/by-sa/2.0/\">CC-BY-SA</a>, Imagery © <a href=\"https://www.mapbox.com/\">Mapbox</a>",
         maxZoom: 18,
@@ -90,8 +97,8 @@ function createMap(earthquakes) {
 
   // Create a baseMaps object.
   let baseMaps = {
-    "Street Map": street,
-    "Topographic Map": topo,
+    "Greyscale Map": grayscale,
+    "Outdoors Map": outdoors,
     "Satellite Map": satellite
   };
 
@@ -105,7 +112,7 @@ function createMap(earthquakes) {
   let myMap = L.map("map", {
     center: [41.86, 12.49],
     zoom: 2,
-    layers: [street, earthquakes, plates]
+    layers: [grayscale, earthquakes, plates]
   });
 
   // Create a layer control.
