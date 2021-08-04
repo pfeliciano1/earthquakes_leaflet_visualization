@@ -2,67 +2,72 @@
 let queryUrl = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson";
 let platesUrl = "https://github.com/fraxen/tectonicplates/blob/master/GeoJSON/PB2002_boundaries.json";
 
+// Function to Determine Size of Marker Based on the Magnitude of the Earthquake
+function markerSize(magnitude) {
+    if (magnitude === 0) {
+    return 1;
+    }
+    return magnitude * 3;
+};
+
+let earthquakes = new L.LayerGroup();
+
 // Perform a GET request to the query URL/
 d3.json(queryUrl).then(function (data) {
-  // Once we get a response, send the data.features object to the createFeatures function.
-  createFeatures(data.features);
+  
+    L.geoJSON(data.features, {
+        pointToLayer: function (feature, latlng) {
+            return L.circleMarker(latlng, { radius: markerSize(feature.properties.mag) });
+        },
+
+        style: function (geoJsonFeature) {
+            return {
+                fillColor: Color(geoJsonFeature.properties.mag),
+                fillOpacity: 0.7,
+                weight: 0.1,
+                color: 'black'
+
+            }
+        },
+
+        onEachFeature: function (feature, layer) {
+            layer.bindPopup(
+                "<h4 style='text-align:center;'>" + new Date(feature.properties.time) +
+                "</h4> <hr> <h5 style='text-align:center;'>" + feature.properties.title + "</h5>");
+        }
+    }).addTo(earthquakes);
+    createMap(earthquakes);
 });
 
-function createFeatures(earthquakeData) {
+let plates = new L.LayerGroup();
 
-    // Function to Determine Size of Marker Based on the Magnitude of the Earthquake
-    function markerSize(magnitude) {
-        if (magnitude === 0) {
-        return 1;
-        }
-        return magnitude * 3;
+d3.json(platesUrl, function (response) {
+    L.geoJSON(response.features, {
+        style: function (geoJsonFeature) {
+            return {
+                weight: 2,
+                color: Color(geoJsonFeature)
+            }
+        },
+    }).addTo(faultline);
+})
+
+function Color(magnitude) {
+    if (magnitude > 5) {
+        return 'red'
+    } else if (magnitude > 4) {
+        return 'darkorange'
+    } else if (magnitude > 3) {
+        return 'orange'
+    } else if (magnitude > 2) {
+        return 'yellow'
+    } else if (magnitude > 1) {
+        return 'lightgreen'
+    } else {
+        return 'green'
     }
+};
 
-    // Function to Determine Style of Marker Based on the Magnitude of the Earthquake
-    function styleInfo(feature) {
-        return {
-          opacity: 1,
-          fillOpacity: 1,
-          fillColor: chooseColor(feature.properties.mag),
-          color: "#000000",
-          radius: markerSize(feature.properties.mag),
-          stroke: true,
-          weight: 0.5
-        };
-    }
-
-    // Function to Determine Color of Marker Based on the Magnitude of the Earthquake
-    function chooseColor(magnitude) {
-        switch (true) {
-        case magnitude > 5:
-            return "#581845";
-        case magnitude > 4:
-            return "#900C3F";
-        case magnitude > 3:
-            return "#C70039";
-        case magnitude > 2:
-            return "#FF5733";
-        case magnitude > 1:
-            return "#FFC300";
-        default:
-            return "#DAF7A6";
-        }
-    }
-    // Define a function that we want to run once for each feature in the features array.
-  // Give each feature a popup that describes the place and time of the earthquake.
-  function onEachFeature(feature, layer) {
-    layer.bindPopup(`<h3>${feature.properties.place}</h3><hr><p>${new Date(feature.properties.time)}</p>`);
-  }
-
-  // Create a GeoJSON layer that contains the features array on the earthquakeData object.
-  // Run the onEachFeature function once for each piece of data in the array.
-  let earthquakes = L.geoJSON(earthquakeData, {
-    onEachFeature: onEachFeature
-  });
-
-  // Send our earthquakes layer to the createMap function/
-  createMap(earthquakes);
-}
 
 function createMap(earthquakes) {
 
@@ -83,9 +88,6 @@ function createMap(earthquakes) {
         accessToken: API_KEY
     });
 
-  let earthquakes_layer = L.layerGroup();
-  let plates_layer = L.layerGroup();
-
   // Create a baseMaps object.
   let baseMaps = {
     "Street Map": street,
@@ -95,15 +97,15 @@ function createMap(earthquakes) {
 
   // Create an overlay object to hold our overlay.
   let overlayMaps = {
-    "Earthquakes": earthquakes_layer,
-    "Tectonic Plates": plates_layer
+    "Earthquakes": earthquakes,
+    "Tectonic Plates": plates
   };
 
   // Create our map, giving it the streetmap and earthquakes layers to display on load.
   let myMap = L.map("map", {
     center: [41.86, 12.49],
     zoom: 2,
-    layers: [street, earthquakes_layer]
+    layers: [street, earthquakes, plates]
   });
 
   // Create a layer control.
@@ -112,5 +114,25 @@ function createMap(earthquakes) {
   L.control.layers(baseMaps, overlayMaps, {
     collapsed: true
   }).addTo(myMap);
+
+  let legend = L.control({ position: 'bottomright' });
+
+    legend.onAdd = function () {
+
+        let div = L.DomUtil.create('div', 'info legend'),
+            magnitude = [0, 1, 2, 3, 4, 5];
+            
+
+        div.innerHTML += "<h4>Magnitude</h4>"
+
+         for (let i = 0; i < magnitude.length; i++) {
+             div.innerHTML +=
+             '<div class="color-box" style="background-color:' + Color(magnitude[i] + 1) + ';"></div> '+ 
+                magnitude[i] + (magnitude[i + 1] ? '&ndash;' + magnitude[i + 1] + '<br>' : '+');
+        }
+
+        return div;
+    };
+    legend.addTo(myMap);
 
 }
