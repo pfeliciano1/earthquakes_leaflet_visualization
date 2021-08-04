@@ -1,6 +1,6 @@
 // Store our API endpoint as queryUrl.
 let queryUrl = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson";
-let platesUrl = "https://github.com/fraxen/tectonicplates/blob/master/GeoJSON/PB2002_boundaries.json";
+let platesUrl = "https://raw.githubusercontent.com/fraxen/tectonicplates/master/GeoJSON/PB2002_plates.json";
 
 // Function to Determine Size of Marker Based on the Magnitude of the Earthquake
 function markerSize(magnitude) {
@@ -22,7 +22,7 @@ d3.json(queryUrl).then(function (data) {
 
         style: function (geoJsonFeature) {
             return {
-                fillColor: Color(geoJsonFeature.properties.mag),
+                fillColor: Color(geoJsonFeature.geometry.coordinates[2]),
                 fillOpacity: 0.7,
                 weight: 0.1,
                 color: 'black'
@@ -42,33 +42,42 @@ d3.json(queryUrl).then(function (data) {
 
 let plates = new L.LayerGroup();
 
-d3.json(platesUrl, function (response) {
-    L.geoJSON(response.features, {
+d3.json(platesUrl).then((response) => {
+    L.geoJSON(response, {
         style: function (geoJsonFeature) {
             return {
                 weight: 2,
-                color: Color(geoJsonFeature)
+                color: 'black'
             }
         },
     }).addTo(plates);
-})
+});
 
 function Color(magnitude) {
-    if (magnitude > 5) {
+    if (magnitude > 90) {
         return 'red'
-    } else if (magnitude > 4) {
+    } else if (magnitude > 70) {
         return 'darkorange'
-    } else if (magnitude > 3) {
+    } else if (magnitude > 50) {
         return 'orange'
-    } else if (magnitude > 2) {
+    } else if (magnitude > 30) {
         return 'yellow'
-    } else if (magnitude > 1) {
-        return 'lightgreen'
+    } else if (magnitude > 10) {
+        return 'yellowgreen'
     } else {
         return 'green'
     }
 };
 
+function getColor(d) {
+    return d > -10  ? '#800026' :
+           d > 10   ? '#BD0026' :
+           d > 30   ? '#E31A1C' :
+           d > 50   ? '#FC4E2A' :
+           d > 70   ? '#FD8D3C' :
+           d > 90   ? '#FEB24C' :
+                      '#FFEDA0';
+};
 
 function createMap(earthquakes) {
 
@@ -111,7 +120,7 @@ function createMap(earthquakes) {
   // Create our map, giving it the streetmap and earthquakes layers to display on load.
   let myMap = L.map("map", {
     center: [41.86, 12.49],
-    zoom: 2,
+    zoom: 3,
     layers: [grayscale, earthquakes, plates]
   });
 
@@ -122,9 +131,10 @@ function createMap(earthquakes) {
     collapsed: true
   }).addTo(myMap);
 
+    //Create a legend for the map 
   let legend = L.control({ position: 'bottomright' });
 
-    legend.onAdd = function () {
+    legend.onAdd = function (map) {
 
         let div = L.DomUtil.create('div', 'info legend'),
             magnitude = [0, 1, 2, 3, 4, 5];
@@ -134,7 +144,7 @@ function createMap(earthquakes) {
 
          for (let i = 0; i < magnitude.length; i++) {
              div.innerHTML +=
-             '<div class="color-box" style="background-color:' + Color(magnitude[i] + 1) + ';"></div> '+ 
+             '<div class="color-box" style="background-color:' + getColor(magnitude[i] + 1) + ';"></div> '+ 
                 magnitude[i] + (magnitude[i + 1] ? '&ndash;' + magnitude[i + 1] + '<br>' : '+');
         }
 
