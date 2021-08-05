@@ -1,6 +1,6 @@
 // Store our API endpoint as queryUrl.
 let queryUrl = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson";
-let platesUrl = "https://raw.githubusercontent.com/fraxen/tectonicplates/master/GeoJSON/PB2002_plates.json";
+let platesUrl = "https://raw.githubusercontent.com/fraxen/tectonicplates/master/GeoJSON/PB2002_boundaries.json";
 
 // Function to Determine Size of Marker Based on the Magnitude of the Earthquake
 function markerSize(magnitude) {
@@ -47,7 +47,7 @@ d3.json(platesUrl).then((response) => {
         style: function (geoJsonFeature) {
             return {
                 weight: 2,
-                color: 'black'
+                color: 'orange'
             }
         },
     }).addTo(plates);
@@ -132,24 +132,25 @@ function createMap(earthquakes) {
   }).addTo(myMap);
 
     //Create a legend for the map 
-  let legend = L.control({ position: 'bottomright' });
+    var legend = L.control({position: 'bottomright'});
 
     legend.onAdd = function (map) {
-
-        let div = L.DomUtil.create('div', 'info legend'),
-            magnitude = [0, 1, 2, 3, 4, 5];
-            
-
-        div.innerHTML += "<h4>Magnitude</h4>"
-
-         for (let i = 0; i < magnitude.length; i++) {
-             div.innerHTML +=
-             '<div class="color-box" style="background-color:' + getColor(magnitude[i] + 1) + ';"></div> '+ 
-                magnitude[i] + (magnitude[i + 1] ? '&ndash;' + magnitude[i + 1] + '<br>' : '+');
+    
+        var div = L.DomUtil.create('div', 'info legend'),
+            grades = [-10, 10, 30, 50, 70, 90],
+            labels = [];
+    
+            div.innerHTML += "<h4>Magnitude</h4>"
+        // loop through our density intervals and generate a label with a colored square for each interval
+        for (var i = 0; i < grades.length; i++) {
+            div.innerHTML += 
+                '<i style="background:' + Color(grades[i] + 1) + '"></i> ' +
+                grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
         }
-
+    
         return div;
     };
+    
     legend.addTo(myMap);
 
 }
