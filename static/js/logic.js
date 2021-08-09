@@ -140,12 +140,12 @@ function createMap(earthquakes) {
             grades = [-10, 10, 30, 50, 70, 90],
             labels = [];
     
-            div.innerHTML += "<h4>Magnitude</h4>"
+            div.innerHTML += "<h3>Depth</h3>"
         // loop through our density intervals and generate a label with a colored square for each interval
         for (var i = 0; i < grades.length; i++) {
             div.innerHTML += 
-                '<i style="background:' + Color(grades[i] + 1) + '"></i> ' +
-                grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
+                '<div><i style="background:' + Color(grades[i] + 1) + '"></i> ' +
+                grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br></div>' : '+');
         }
     
         return div;
